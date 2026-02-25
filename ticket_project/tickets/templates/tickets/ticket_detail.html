@@ -1,0 +1,135 @@
+{% extends 'tickets/base.html' %}
+
+{% block content %}
+<!-- Ticket Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-ticket-alt"></i> Ticket #{{ ticket.id }}
+        <small class="text-muted fs-6">{{ ticket.time_since_created }}</small>
+    </h2>
+    <div>
+        {% if ticket.created_by == user or user.is_staff %}
+            <a href="{% url 'ticket_edit' ticket.id %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'ticket_delete' ticket.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+        {% endif %}
+        <a href="{% url 'ticket_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Ticket Details -->
+<div class="row">
+    <div class="col-md-8">
+        <!-- Main Ticket Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">{{ ticket.title }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p class="mt-2">{{ ticket.description|linebreaks }}</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- In the ticket detail sidebar -->
+                        <p>
+                            <strong>Created by:</strong> 
+                            {% if ticket.is_admin_created %}
+                                {{ ticket.created_by.username }} 
+                                <span class="badge bg-warning">for {{ ticket.created_for.username }}</span>
+                            {% else %}
+                                {{ ticket.created_by.username }}
+                            {% endif %}
+                        </p>
+                        <p><strong>Created At:</strong> {{ ticket.created_at|date:"F d, Y H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Last Updated:</strong> {{ ticket.updated_at|date:"F d, Y H:i" }}</p>
+                        <p><strong>Total Comments:</strong> {{ comments.count }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comments Section -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-comments"></i> Comments ({{ comments.count }})</h5>
+            </div>
+            <div class="card-body">
+                {% if comments %}
+                    {% for comment in comments %}
+                        <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ comment.author.username }}</strong>
+                                <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                            <p class="mt-2 mb-0">{{ comment.message|linebreaks }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center mb-0">No comments yet.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Add Comment Form -->
+            <div class="card-footer">
+                <form method="post" action="{% url 'add_comment' ticket.id %}">
+                    {% csrf_token %}
+                    {{ comment_form.message }}
+                    <button type="submit" class="btn btn-primary mt-2">
+                        <i class="fas fa-paper-plane"></i> Add Comment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Status Card -->
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Current Status:</strong><br>
+                    <span class="badge {% if ticket.status == 'open' %}bg-success{% elif ticket.status == 'in_progress' %}bg-warning text-dark{% elif ticket.status == 'resolved' %}bg-info{% else %}bg-secondary{% endif %} p-2 fs-6">
+                        {{ ticket.get_status_display_safe }}
+                    </span>
+                </div>
+                
+                {% if is_staff %}
+                    <form method="post" action="{% url 'update_status' ticket.id %}">
+                        {% csrf_token %}
+                        {{ status_form.status }}
+                        <button type="submit" class="btn btn-primary w-100 mt-2">
+                            <i class="fas fa-sync-alt"></i> Update Status
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Priority Card -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">Priority</h6>
+            </div>
+            <div class="card-body">
+                <span class="badge {% if ticket.priority == 'high' %}bg-danger{% elif ticket.priority == 'medium' %}bg-warning text-dark{% else %}bg-success{% endif %} p-2 fs-6">
+                    {{ ticket.get_priority_display_safe }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
