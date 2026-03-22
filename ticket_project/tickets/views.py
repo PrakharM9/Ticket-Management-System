@@ -1,9 +1,3 @@
-"""
-Views
-EASY EXPLANATION: Each function here handles what happens on a specific page
-Think of them as: "When user goes to this URL, do this"
-"""
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -12,8 +6,6 @@ from django.db.models import Q
 from .models import Ticket, Comment
 from .forms import RegisterForm, LoginForm, TicketForm, CommentForm, StatusUpdateForm
 from .decorators import staff_required, ticket_owner_required
-
-# ==================== AUTHENTICATION VIEWS ====================
 
 def register_view(request):
     """Handle user registration"""
@@ -64,9 +56,6 @@ def logout_view(request):
     messages.success(request, 'You have been logged out.')
     return redirect('login')
 
-
-# ==================== MAIN VIEWS ====================
-
 @login_required
 def dashboard_view(request):
     """
@@ -74,15 +63,12 @@ def dashboard_view(request):
     Shows different data for regular users vs staff
     """
     if request.user.is_staff:
-        # Staff see all tickets
         all_tickets = Ticket.objects.all()
         recent_tickets = Ticket.objects.order_by('-created_at')[:5]
     else:
-        # Regular users see tickets created FOR them (not by them)
-        all_tickets = Ticket.objects.filter(created_for=request.user)  # ← CHANGED to created_for
+        all_tickets = Ticket.objects.filter(created_for=request.user) 
         recent_tickets = all_tickets.order_by('-created_at')[:5]
     
-    # Calculate counts
     total_tickets = all_tickets.count()
     open_count = all_tickets.filter(status='open').count()
     in_progress_count = all_tickets.filter(status='in_progress').count()
@@ -102,29 +88,20 @@ def dashboard_view(request):
     return render(request, 'tickets/dashboard.html', context)
 @login_required
 def ticket_list_view(request):
-    """
-    Show list of tickets with filtering and search
-    """
-    # Base queryset based on user type
     if request.user.is_staff:
         tickets = Ticket.objects.all()
     else:
-        # Regular users see tickets created FOR them (not by them)
-        tickets = Ticket.objects.filter(created_for=request.user)  # ← CHANGED to created_for
+        tickets = Ticket.objects.filter(created_for=request.user)  
     
-    # Get filter parameters from GET request
     status_filter = request.GET.get('status')
     search_query = request.GET.get('search')
     
-    # Apply status filter if provided
     if status_filter:
         tickets = tickets.filter(status=status_filter)
     
-    # Apply search filter if provided
     if search_query:
         tickets = tickets.filter(title__icontains=search_query)
     
-    # Order by latest first
     tickets = tickets.order_by('-created_at')
     
     context = {
@@ -142,17 +119,13 @@ def ticket_detail_view(request, ticket_id):
     """
     ticket = get_object_or_404(Ticket, id=ticket_id)
     
-    # Check permission (staff can see all, regular users only their own)
-    # CHANGED: Check created_for instead of created_by
     if not request.user.is_staff and ticket.created_for != request.user:
         messages.error(request, "You don't have permission to view this ticket.")
         return redirect('ticket_list')
     
-    # Get comments
     comments = Comment.objects.filter(ticket=ticket).order_by('-created_at')
     comment_form = CommentForm()
     
-    # Create status update form for staff
     status_form = None
     if request.user.is_staff:
         status_form = StatusUpdateForm(instance=ticket)
@@ -171,18 +144,14 @@ def ticket_detail_view(request, ticket_id):
 @login_required
 def ticket_create_view(request):
     if request.method == 'POST':
-        # Pass user to form
         form = TicketForm(request.POST, user=request.user)
         if form.is_valid():
             ticket = form.save(commit=False)
             
-            # CASE 1: Regular user
             if not request.user.is_staff:
                 ticket.created_by = request.user
                 ticket.created_for = request.user
                 ticket.is_admin_created = False
-            
-            # CASE 2: Admin creating for someone
             else:
                 ticket.created_by = request.user
                 ticket.created_for = form.cleaned_data['created_for']

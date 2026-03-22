@@ -1,8 +1,3 @@
-"""
-Forms
-EASY EXPLANATION: Forms handle user input and validation
-Like creating a web form that checks if data is valid
-"""
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
@@ -10,10 +5,6 @@ from django.contrib.auth.models import User
 from .models import Ticket, Comment
 
 class RegisterForm(UserCreationForm):
-    """
-    User Registration Form
-    Extends Django's built-in registration form
-    """
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
         'class': 'form-control',
         'placeholder': 'Enter your email'
@@ -47,10 +38,6 @@ class LoginForm(forms.Form):
 
 
 class TicketForm(forms.ModelForm):
-    """
-    Ticket Creation/Edit Form
-    Based on the Ticket model
-    """
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'priority', 'created_for']
@@ -73,7 +60,6 @@ class TicketForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
-        """Custom initialization to handle user-specific logic"""
         # Pop 'user' from kwargs (it's passed from view)
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -111,9 +97,6 @@ class TicketForm(forms.ModelForm):
 
 
 class CommentForm(forms.ModelForm):
-    """
-    Comment Form
-    """
     class Meta:
         model = Comment
         fields = ['message']
@@ -127,9 +110,6 @@ class CommentForm(forms.ModelForm):
 
 
 class StatusUpdateForm(forms.ModelForm):
-    """
-    Status Update Form (for admins)
-    """
     class Meta:
         model = Ticket
         fields = ['status']

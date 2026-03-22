@@ -1,7 +1,3 @@
-"""
-App URLs
-EASY EXPLANATION: Maps URLs to views (functions that handle requests)
-"""
 
 from django.urls import path
 from . import views

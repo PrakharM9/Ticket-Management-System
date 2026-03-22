@@ -43,17 +43,16 @@ class Ticket(models.Model):
     created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
-        related_name='tickets_created'  # Changed to avoid confusion
+        related_name='tickets_created'  
     )
     created_for = models.ForeignKey(
         User, 
         on_delete=models.CASCADE,
-        related_name='tickets_owned',  # This user's tickets
-        null=True,  # Allow null for existing tickets
+        related_name='tickets_owned', 
+        null=True, 
         blank=True
     )
     
-    # NEW: Track if admin created it
     is_admin_created = models.BooleanField(default=False)
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
